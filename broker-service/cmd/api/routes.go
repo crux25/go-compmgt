@@ -21,8 +21,10 @@ func (app *Config) routes() http.Handler {
 		MaxAge:           300,
 	}))
 
+	// Define route handlers.
 	mux.Use(middleware.Heartbeat("/ping"))
 	mux.Post("/", app.broker)
+	mux.Post("/handle", app.handleSubmission)
 
 	return mux
 }

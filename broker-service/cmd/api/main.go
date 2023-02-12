@@ -4,13 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/crux25/go-compmgt/helpers"
 )
 
 const (
-	webPort = "9091"
+	webPort = "80"
 )
 
-type Config struct{}
+type Config struct {
+	jsonHelper helpers.JSONHelper
+}
 
 func main() {
 	app := &Config{}
