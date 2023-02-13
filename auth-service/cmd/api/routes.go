@@ -1,43 +1,29 @@
 package main
 
 import (
-	"errors"
-	"fmt"
 	"net/http"
 
-	"github.com/crux25/go-compmgt/helpers"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 )
 
-func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
-	var requestPayload struct {
-		Email    string `json:"email"`
-		Password string `json:"password"`
-	}
+func (app *Config) routes() http.Handler {
+	mux := chi.NewRouter()
 
-	err := app.jsonHelper.ReadJSON(w, r, &requestPayload)
-	if err != nil {
-		app.jsonHelper.ErrorJSON(w, err, http.StatusBadRequest)
-		return
-	}
+	// specify who is allowed to connect
+	mux.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
-	// validate the user against the database
-	user, err := app.Models.User.GetByEmail(requestPayload.Email)
-	if err != nil {
-		app.jsonHelper.ErrorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
-		return
-	}
+	mux.Use(middleware.Heartbeat("/ping"))
+	mux.Post("/authenticate", app.Authenticate)
+	mux.Post("/validate", app.Validate)
 
-	valid, err := user.PasswordMatches(requestPayload.Password)
-	if err != nil || !valid {
-		app.jsonHelper.ErrorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
-		return
-	}
-
-	payload := helpers.JSONResponse{
-		Error:   false,
-		Message: fmt.Sprintf("Logged in user %s", user.Email),
-		Data:    user,
-	}
-
-	app.jsonHelper.WriteJSON(w, http.StatusAccepted, payload)
+	return mux
 }
