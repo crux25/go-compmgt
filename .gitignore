@@ -22,3 +22,9 @@ go.work
 
 # Visual studio file
 workspace.code-workspace
+
+# Exclude binaries.
+auth-service/authApp
+broker-service/brokerservice
+company-service/compApp
+
